@@ -7,19 +7,8 @@ local DPWidget = Class(Widget, function(self,owner)
     self.num:SetHAlign(ANCHOR_MIDDLE)
     self.num:SetString("")
     self.num:SetPosition(0, -25)
+    self:SetScaleMode(SCALEMODE_PROPORTIONAL)
     self:StartUpdating()
-    owner:DoTaskInTime(1,function ()
-        if not owner.components.deploydata.coordinate then
-            self:Hide()
-        end
-    end)
-    owner:ListenForEvent("coordinateschange",function ()
-        if  owner.components.deploydata.coordinate then
-            self:Show()
-        else
-            self:Hide()
-        end
-    end)
 end)
 
 function DPWidget:OnUpdate(dt)

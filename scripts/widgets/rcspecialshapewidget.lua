@@ -6,6 +6,7 @@ local ImageButton = require "widgets/imagebutton"
 local TEMPLATES = require "widgets/redux/templates"
 local Writeable = require("widgets/rcwriteablewidget")
 local L = TUNING.RCLANG == "ch_s" and true or false
+local Config  = _G.RDConfig 
 -------------------------------------------------------------------------------------------------------
 local RCSPBWidget = Class(Widget, function(self,mainscreen)
     Widget._ctor(self, "RCDefaultParmWidget")
@@ -52,7 +53,7 @@ local RCSPBWidget = Class(Widget, function(self,mainscreen)
     self.determine:SetTextColour(UICOLOURS.RED)
     self.determine:SetText(L and "确定" or "OK")
     self.determine:SetOnClick(function()
-        ThePlayer.components.deploydata:DelShape(self.selectdest)
+        Config:DelShape(self.selectdest)
         if self.dests_scroll_list_del then
             self.dests_scroll_list_del:Kill()
             self.dests_scroll_list_del = nil
@@ -116,7 +117,7 @@ function RCSPBWidget:DestDeleteListItem()
                 self.writable:Kill()
             end
             self.writable = self.root:AddChild(Writeable(function (name)
-                ThePlayer.components.deploydata:SetShapeName(index,name)
+                Config:SetShapeName(index,name)
                 dest.parmname:SetString(name)
             end))
         end) 
@@ -138,7 +139,7 @@ function RCSPBWidget:DestNormalListItem()
     dest.SetInfo = function(_,index,data)
         dest.parmname:SetString(data.name)
         dest.backing:SetOnClick(function()
-            ThePlayer.components.deploydata.scheme = index
+            Config.scheme = index
             self.mainscreen:OnUpdate()
             self:Close()
         end)
@@ -163,7 +164,7 @@ function RCSPBWidget:MakeDelScreen()
         widget.destitem:Show()
     end
     if  not self.dests_scroll_list_del then
-        self.dests_scroll_list_del = self.root:AddChild(TEMPLATES.ScrollingGrid(ThePlayer.components.deploydata.schemelist, {
+        self.dests_scroll_list_del = self.root:AddChild(TEMPLATES.ScrollingGrid(Config.userscheme, {
                 context = {""},
                 widget_width = 420,
                 widget_height = 60,
@@ -204,7 +205,7 @@ function RCSPBWidget:MakeNormalScreen()
         dest:SetInfo(index,data)
     end
     if  not self.dests_scroll_list then
-        self.dests_scroll_list = self.root:AddChild(TEMPLATES.ScrollingGrid(ThePlayer.components.deploydata.schemelist, {
+        self.dests_scroll_list = self.root:AddChild(TEMPLATES.ScrollingGrid(Config.userscheme, {
                 context = {""},
                 widget_width = 420,
                 widget_height = 60,

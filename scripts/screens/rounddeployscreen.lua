@@ -9,6 +9,7 @@ local RCKeyMap = require "widgets/rckeymapwidget"
 local RCShape = require "widgets/rcspecialshapewidget"
 local RCParm = require "widgets/rcdefaultparmwidget"
 local Writeable = require("widgets/rcwriteablewidget")
+local Config  = _G.RDConfig 
 local L = TUNING.RCLANG == "ch_s" and true or false
 local parm = {
     [1] = {
@@ -238,8 +239,8 @@ function RCScreen:Draw()
         self[v.name]:SetTextSize(25)
         self[v.name]:SetTextColour(UICOLOURS.SILVER)
         self[v.name]:SetOnClick(function()
-            self.owner.components.deploydata.shape = v.name
-            self.owner.components.deploydata.scheme = nil
+            Config.shape = v.name
+            Config.scheme = nil
             self:OnUpdate()
             self[v.name]:OnLoseFocus()
         end)
@@ -255,7 +256,7 @@ function RCScreen:Draw()
     self.recordmode:SetTextSize(25)
     self.recordmode:SetTextColour(UICOLOURS.SILVER)
     self.recordmode:SetOnClick(function()
-        self.owner.components.deploydata:ChangeRecordMode()
+        Config:ChangeRecordMode()
     self:OnUpdate()
     self.recordmode:OnLoseFocus()
     end)
@@ -270,8 +271,8 @@ function RCScreen:Draw()
         self[v.name]:SetTextSize(25)
         self[v.name]:SetTextColour(UICOLOURS.SILVER)
         self[v.name]:SetOnClick(function()
-            local val = self.owner.components.deploydata[v.name]
-            self.owner.components.deploydata[v.name] = not val
+            local val = Config[v.name]
+            Config[v.name] = not val
             if v.name == "coordinate" then
                 self.owner:PushEvent("coordinateschange")
             end
@@ -292,8 +293,8 @@ function RCScreen:Draw()
         self[v.name]:SetTextSize(25)
         self[v.name]:SetTextColour(UICOLOURS.SILVER)
         self[v.name]:SetOnClick(function()
-            local val = self.owner.components.deploydata[v.name]
-            self.owner.components.deploydata[v.name] = not val
+            local val = Config[v.name]
+            Config[v.name] = not val
             self:OnUpdate()
             self[v.name]:OnLoseFocus()
         end)
@@ -309,9 +310,9 @@ function RCScreen:Draw()
     self.changekey:SetTextSize(25)
     self.changekey:SetTextColour(UICOLOURS.SILVER)
     self.changekey:SetOnClick(function()
-        self.owner.components.deploydata.block = true
+        Config.block = true
         for k, v in ipairs(keylist) do
-            self.keymapwidget.key_temp[k] = self.owner.components.deploydata[v]
+            self.keymapwidget.key_temp[k] = Config[v]
         end
         self.keymapwidget:OnUpdate()
         self.keymapwidget:Show()
@@ -358,9 +359,9 @@ function RCScreen:Draw()
             self.writable:Kill()
         end
         self.writable = self.root:AddChild(Writeable(function (name)
-            self.owner.components.deploydata:SaveCustomData(name)
+            Config:SaveCustomData(name)
         end))
-        if  self.owner.components.deploydata.recordmode then
+        if  Config.recordmode then
             self.writable.titlle:SetString("输入 预设形状 名:")
         else
             self.writable.titlle:SetString("输入 预设参数 名:")
@@ -408,26 +409,25 @@ function RCScreen:RecordChange(key, number)
         return
     end
     if key == "radius" then
-        self.owner.components.deploydata:SetR(number)
+        Config:SetR(number)
     elseif key == "number" then
         if number ~= "0" then
-            self.owner.components.deploydata:SetN(number)
+            Config:SetN(number)
         end
     elseif key == "interval" then
-        self.owner.components.deploydata:SetI(number)
+        Config:SetI(number)
     elseif key == "spin" then
-        self.owner.components.deploydata:SetS(number)
+        Config:SetS(number)
     elseif key == "angle" then
-        self.owner.components.deploydata:SetA(number)
+        Config:SetA(number)
     elseif key == "layerspac" then
-        self.owner.components.deploydata:SetL(number)
+        Config:SetL(number)
     end
     self:OnUpdate()
 end
 
 function RCScreen:OnUpdate()
-    local rc = self.owner.components.deploydata
-    local parmvalue = rc:GetParmValue()
+    local parmvalue = Config:GetParmValue()
     local str
     for k, v in ipairs(parm) do
         str = string.format("%s\n%s", L and v.text or v.text_en, parmvalue[k])
@@ -437,25 +437,25 @@ function RCScreen:OnUpdate()
         self[v.name]:SetTextColour(UICOLOURS.SILVER)
     end
 
-    if not rc.scheme then
+    if not Config.scheme then
         self.specialshapename:Hide()
-        local shape = rc:GetShapeValue()
+        local shape = Config:GetShapeValue()
         if  self[shape]  then
             self[shape]:SetTextColour(UICOLOURS.RED)
         end
         self.specialshape:SetTextColour(UICOLOURS.SILVER)
     else
         self.specialshape:SetTextColour(UICOLOURS.RED)
-        local SpecShapeName = rc:GetSpecShapeName()
+        local SpecShapeName = Config:GetSpecShapeName()
         self.specialshapename:SetString("当前自定义方案:"..SpecShapeName)
         self.specialshapename:Show()
     end
-    if  rc.recordmode then
+    if  Config.recordmode then
         self.recordmode:SetTextColour(UICOLOURS.RED)
     else
         self.recordmode:SetTextColour(UICOLOURS.SILVER)
     end
-    local fucnvalue = rc:GetFuncValue()
+    local fucnvalue = Config:GetFuncValue()
     for k, v in ipairs(func) do
         if fucnvalue[k] then
             self[v.name]:SetTextColour(UICOLOURS.RED)
@@ -463,7 +463,7 @@ function RCScreen:OnUpdate()
             self[v.name]:SetTextColour(UICOLOURS.SILVER)
         end
     end
-    local fucn2value = rc:GetFunc2Value()
+    local fucn2value = Config:GetFunc2Value()
     for k, v in ipairs(func2) do
         if fucn2value[k] then
             self[v.name]:SetTextColour(UICOLOURS.RED)
@@ -475,7 +475,7 @@ function RCScreen:OnUpdate()
 end
 
 function RCScreen:Close()
-    self.owner.components.deploydata:Save()
+    Config:Save()
     TheFrontEnd:PopScreen(self)
     self.inactive = true
 end
@@ -488,7 +488,7 @@ function RCScreen:OnBecomeActive() RCScreen._base.OnBecomeActive(self) end
 
 function RCScreen:OnRawKey(key, down)
     if RCScreen._base.OnRawKey(self, key, down) then return true end
-    if down and key == self.owner.components.deploydata.key_screen and not self.keymapwidget.focus then
+    if down and key == Config.key_screen and not self.keymapwidget.focus then
         self:Close()
     end
 end

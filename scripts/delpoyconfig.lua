@@ -13,7 +13,7 @@ local parm = {
     "shape", "custom", "corners", "lockitem", "crowded", "coordinate", "layer",
     "direction", "order","scheme"
 }
-local CUSTOMPARMPATH = (TUNING.RCROOT or '') .. "scripts/customparm.json"
+local userparmPATH = (TUNING.RCROOT or '') .. "scripts/userparm.json"
 local SHAPEPATH = (TUNING.RCROOT or '') .. "scripts/specialshape.json"
 local relationaltable = require('relationaltable')
 
@@ -96,43 +96,63 @@ local DeployCalc = Class(function(self, inst)
     self.guideline = nil -- 范围
     self.gridplacer = nil -- 圆心
     self.scheme = nil -- 自定义图案
-    self.schemelist = {}
-    self.customparm = {}
+    self.userscheme = {}
+    self.userparm = {{
+        delblock = true,
+        name = "默认",
+        data = {
+            radius = 14.8,
+            deploynum = 45,
+            interval = 2,
+            spin = 0,
+            range = 360,
+            space = 0.5
+        }
+    },
+    {
+        name = "五锅",
+        data = {
+            spin = 0,
+            deploynum = 5,
+            space = 0.5,
+            interval = 3.2,
+            range = 360,
+            radius = 2.73
+        }
+    }}
     self.ents = {}
     self:Init()
 end)
 
 function DeployCalc:Init()
-    TheSim:GetPersistentString("rounddeploycache", function(load_success, str)
+    TheSim:GetPersistentString("rounddeployconfig", function(load_success, str)
         if load_success then
-            local r, j = pcall(json.decode, str)
+            local r, data = pcall(json.decode, str)
             if r then
-                if type(j.key_screen) == "number" then
-                    self.key_screen = j.key_screen
+                if type(data.key_screen) == "number" then
+                    self.key_screen = data.key_screen
                 end
-                if type(j.key_deploy) == "number" then
-                    self.key_deploy = j.key_deploy
+                if type(data.key_deploy) == "number" then
+                    self.key_deploy = data.key_deploy
                 end
-                if type(j.key_placer) == "number" then
-                    self.key_placer = j.key_placer
+                if type(data.key_placer) == "number" then
+                    self.key_placer = data.key_placer
                 end
             end
-            for k, v in ipairs(parm) do
-                if j[v] ~= nil then self[v] = j[v] end
+            for _, v in ipairs(parm) do
+                if data[v] ~= nil then self[v] = data[v] end
             end
         end
     end)
-    local shapestr = read(SHAPEPATH)
-    local r,data = pcall(json.decode,shapestr)
-    if  r then
-        self.schemelist = data
-    end
-    
-    local parmstr = read(CUSTOMPARMPATH)
-    local re,result = pcall(json.decode,parmstr)
-    if  re then
-        self.customparm = result
-    end
+    TheSim:GetPersistentString("rounddeployuserdata", function(load_success, str)
+        if load_success then
+            local r, data = pcall(json.decode, str)
+            if r then
+                self.userscheme = data.userscheme
+                self.userparm = data.userparm
+            end
+        end
+    end)
 end
 
 function DeployCalc:Save()
@@ -142,7 +162,9 @@ function DeployCalc:Save()
     tb.key_deploy = self.key_deploy
     tb.key_placer = self.key_placer
     local r, j = pcall(json.encode, tb)
-    if r then TheSim:SetPersistentString("rounddeploycache", j, true) end
+    if r then TheSim:SetPersistentString("rounddeployconfig", j, true) end
+    local res, js = pcall(json.encode, {userscheme=self.userscheme,userparm=self.userparm})
+    if res then TheSim:SetPersistentString("rounddeployuserdata", js, true) end
 end
 function DeployCalc:SetR(value)
     self.radius = value
@@ -381,7 +403,7 @@ end
 --ThePlayer.components.deploydata.scheme
 function DeployCalc:GetSpecialPosition()
     local pos = {}
-    local customscheme = self.schemelist[self.scheme]
+    local customscheme = self.userscheme[self.scheme]
     if  not customscheme then
         return pos
     end
@@ -419,31 +441,31 @@ function DeployCalc:GetFuncValue()
 end
 function DeployCalc:GetFunc2Value() return {self.direction, self.order} end
 --自定义参数
-function DeployCalc:DelCustomParm(t)
+function DeployCalc:Deluserparm(t)
     local tab = {}
-    for i,v in ipairs(self.customparm) do
+    for i,v in ipairs(self.userparm) do
         if  not t[i] then
             table.insert(tab,v)
         end
     end
-    self.customparm = tab
-    local r,js = pcall(json.encode,self.customparm)
+    self.userparm = tab
+    local r,js = pcall(json.encode,self.userparm)
     if  r then
-        write(CUSTOMPARMPATH,js)
+        write(userparmPATH,js)
     end
 end
 function DeployCalc:SetParmName(index,name)
-    if  self.customparm[index] then
-        self.customparm[index].name = name
+    if  self.userparm[index] then
+        self.userparm[index].name = name
     end
-    local r,js = pcall(json.encode,self.customparm)
+    local r,js = pcall(json.encode,self.userparm)
     if  r then
-        write(CUSTOMPARMPATH,js)
+        write(userparmPATH,js)
     end
 end
 
 function DeployCalc:SetDefaultParm(index)
-    local parms = self.customparm[index]
+    local parms = self.userparm[index]
     if  parms then
         for k, v in pairs(parms.data) do
             self[k] = v
@@ -451,7 +473,7 @@ function DeployCalc:SetDefaultParm(index)
     end
 end
 function DeployCalc:SaveParmData(name)
-    table.insert(self.customparm,{
+    table.insert(self.userparm,{
         name = name,
         data = {
             spin = self.spin,
@@ -462,37 +484,34 @@ function DeployCalc:SaveParmData(name)
             interval = self.interval
         }
     })
-    local r,js = pcall(json.encode,self.customparm)
-    if  r then
-        write(CUSTOMPARMPATH,js)
-    end
+    self:Save()
 end
 --自定义形状
 function DeployCalc:DelShape(t)
     local tab = {}
-    for i,v in ipairs(self.schemelist) do
+    for i,v in ipairs(self.userscheme) do
         if  not t[i] then
             table.insert(tab,v)
         end
     end
-    self.schemelist = tab
-    local r,js = pcall(json.encode,self.schemelist)
+    self.userscheme = tab
+    local r,js = pcall(json.encode,self.userscheme)
     if  r then
         write(SHAPEPATH,js)
     end
 end
 function DeployCalc:SetShapeName(index,name)
-    if  self.schemelist[index] then
-        self.schemelist[index].name = name
+    if  self.userscheme[index] then
+        self.userscheme[index].name = name
     end
-    local r,js = pcall(json.encode,self.schemelist)
+    local r,js = pcall(json.encode,self.userscheme)
     if  r then
         write(SHAPEPATH,js)
     end
 end
 
 function DeployCalc:GetSpecShapeName()
-    return self.schemelist[self.scheme] and self.schemelist[self.scheme].name or '无自定义方案'
+    return self.userscheme[self.scheme] and self.userscheme[self.scheme].name or '无自定义方案'
 end
 
 
@@ -552,7 +571,7 @@ function DeployCalc:RefreshEntity()
     end
 end
 
-function DeployCalc:SaveEntityData(name)
+function DeployCalc:SaveEntityConfig(name)
     local presets = {}
     for _, v in ipairs(self.ents) do
         if  v and v:IsValid() then
@@ -573,11 +592,8 @@ function DeployCalc:SaveEntityData(name)
     if  #presets == 0 then
         return false
     end
-    table.insert(self.schemelist,{name = name ,data = presets})
-    local r,js = pcall(json.encode,self.schemelist)
-    if  r then
-        write(SHAPEPATH,js)
-    end
+    table.insert(self.userscheme,{name = name ,data = presets})
+    self:Save()
     self:ClearEntity()
 end
 function DeployCalc:ClearEntity()
@@ -601,9 +617,9 @@ function  DeployCalc:ChangeRecordMode()
     end
 end
 
-function DeployCalc:SaveCustomData(name)
+function DeployCalc:SaveCustomConfig(name)
     if  self.recordmode then
-        self:SaveEntityData(name)
+        self:SaveEntity(name)
     else
         self:SaveParmData(name)
     end

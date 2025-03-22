@@ -3,6 +3,7 @@ local Widget = require "widgets/widget"
 local Text = require("widgets/text")
 local TextButton = require("widgets/textbutton")
 local ImageButton = require "widgets/imagebutton"
+local Config  = _G.RDConfig 
 local L = TUNING.RCLANG == "ch_s" and true or false
 local keylist = {
 	{key = "key_screen", text = "设置键",text_en = "key_setting"},
@@ -40,12 +41,11 @@ local RCKeyMapWidget = Class(Widget, function(self, owner)
 	self.ok:SetText(L and "确定" or "ok")
 	self.ok:SetTextColour(UICOLOURS.SILVER)
 	self.ok:SetOnClick(function()
-		local rd = ThePlayer.components.deploydata
 		for k, v in ipairs(self.key_temp) do
-			rd[keylist[k].key] = v
+			Config[keylist[k].key] = v
 		end
-		--ThePlayer.components.deploydata[self.key] = self.key_temp
-		ThePlayer.components.deploydata.block = false
+		--Config[self.key] = self.key_temp
+		Config.block = false
 		self:Hide()
 	end)
 	self.exit = self.root:AddChild(TextButton("images/ui.xml", "blank.tex"))
@@ -54,7 +54,7 @@ local RCKeyMapWidget = Class(Widget, function(self, owner)
 	self.exit:SetText(L and "取消" or "exit")
 	self.exit:SetTextColour(UICOLOURS.GOLD)
 	self.exit:SetOnClick(function()
-		ThePlayer.components.deploydata.block = false
+		Config.block = false
 		self:Hide()
 	end)
 	self.left_btn = self.root:AddChild(ImageButton("images/ui.xml", "arrow2_left.tex"))
@@ -112,7 +112,7 @@ function RCKeyMapWidget:OnControl(control, down)
 	if RCKeyMapWidget._base.OnControl(self, control, down) then return true end
     if not down and  control == CONTROL_CANCEL then
         --TheFrontEnd:GetSound():PlaySound("dontstarve/HUD/click_move")
-		ThePlayer.components.deploydata.block = false
+		Config.block = false
         self:Hide()
         return true
     end

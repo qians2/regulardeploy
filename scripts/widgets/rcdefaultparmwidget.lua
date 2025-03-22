@@ -6,6 +6,7 @@ local ImageButton = require "widgets/imagebutton"
 local TEMPLATES = require "widgets/redux/templates"
 local Writeable = require("widgets/rcwriteablewidget")
 local L = TUNING.RCLANG == "ch_s" and true or false
+local Config  = _G.RDConfig 
 -------------------------------------------------------------------------------------------------------
 local RCDPWidget = Class(Widget, function(self,mainscreen)
     Widget._ctor(self, "RCDefaultParmWidget")
@@ -52,7 +53,7 @@ local RCDPWidget = Class(Widget, function(self,mainscreen)
     self.determine:SetTextColour(UICOLOURS.RED)
     self.determine:SetText(L and "确定" or "OK")
     self.determine:SetOnClick(function()
-        ThePlayer.components.deploydata:DelCustomParm(self.selectdest)
+        Config:Deluserparm(self.selectdest)
         if self.dests_scroll_list_del then
             self.dests_scroll_list_del:Kill()
             self.dests_scroll_list_del = nil
@@ -124,7 +125,7 @@ function RCDPWidget:DestDeleteListItem()
                 self.writable:Kill()
             end
             self.writable = self.root:AddChild(Writeable(function (name)
-                ThePlayer.components.deploydata:SetParmName(index,name)
+                Config:SetParmName(index,name)
                 dest.parmname:SetString(name)
             end))
         end) 
@@ -155,7 +156,7 @@ function RCDPWidget:DestNormalListItem()
         valuestr = valuestr:format(data.data.spin,data.data.radius,data.data.interval,data.data.space,data.data.deploynum,data.data.range)
         dest.parmvalue:SetString(valuestr)
         dest.backing:SetOnClick(function()
-            ThePlayer.components.deploydata:SetDefaultParm(index)
+            Config:SetDefaultParm(index)
                 self.mainscreen:OnUpdate()
                 self:Close()
         end)
@@ -180,7 +181,7 @@ function RCDPWidget:MakeDelScreen()
         widget.destitem:Show()
     end
     if  not self.dests_scroll_list_del then
-        self.dests_scroll_list_del = self.root:AddChild(TEMPLATES.ScrollingGrid(ThePlayer.components.deploydata.customparm, {
+        self.dests_scroll_list_del = self.root:AddChild(TEMPLATES.ScrollingGrid(Config.userparm, {
                 context = {""},
                 widget_width = 420,
                 widget_height = 60,
@@ -221,7 +222,7 @@ function RCDPWidget:MakeNormalScreen()
         dest:SetInfo(index,data)
     end
     if  not self.dests_scroll_list then
-        self.dests_scroll_list = self.root:AddChild(TEMPLATES.ScrollingGrid(ThePlayer.components.deploydata.customparm, {
+        self.dests_scroll_list = self.root:AddChild(TEMPLATES.ScrollingGrid(Config.userparm, {
                 context = {""},
                 widget_width = 420,
                 widget_height = 60,
